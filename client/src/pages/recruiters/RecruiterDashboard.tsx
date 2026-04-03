@@ -4,86 +4,21 @@ import {
   getNotifications as getNotificationsApi,
   getRankedCandidates as getRankedCandidatesApi,
 } from "../../api/recruiters/api";
-
-type Skill = {
-  name: string;
-};
-
-type MatchedProject = {
-  project: string;
-  matched_skills?: string[];
-};
-
-type Job = {
-  job_id?: string;
-  id?: string;
-  _id?: string;
-  title: string;
-  location?: string;
-  description: string;
-  applicants?: string[];
-  required_skills?: Array<Skill | string>;
-  experience_required?: string;
-};
-
-type RankedCandidate = {
-  candidate_id?: string;
-  _id?: string;
-  name?: string;
-  email?: string;
-  bonus?: number;
-  matched_skills?: string[];
-  missing_skills?: string[];
-  final_score?: number;
-  skill_score?: number;
-  project_score?: number;
-  education_score?: number;
-  activity_score?: number;
-  completeness_score?: number;
-  matched_in_projects?: MatchedProject[];
-};
-
-type NotificationItem = {
-  message: string;
-  time?: string;
-  created_at?: string;
-  read?: boolean;
-};
-
-type JobsResponse = Job[] | { jobs?: Job[] };
-type RankedCandidatesResponse = RankedCandidate[] | { candidates?: RankedCandidate[]; rankings?: RankedCandidate[] };
-type NotificationsResponse = { notifications?: NotificationItem[]; unread?: number };
-
-type TagVariant = "required" | "matched" | "missing";
-
-type ScoreBarProps = {
-  label: string;
-  value?: number;
-  color: string;
-};
-
-type TagProps = {
-  name: string;
-  variant: TagVariant;
-};
-
-type CandidateCardProps = {
-  candidate: RankedCandidate;
-  rank: number;
-};
-
-type JobCardProps = {
-  job: Job;
-  selected: boolean;
-  onClick: () => void;
-};
-
-type NotificationBellProps = {
-  notifications: NotificationItem[];
-  unread: number;
-  onOpen: () => void;
-};
-
+import type {
+  Job,
+  CandidateCardProps,
+  Skill,
+  JobCardProps,
+  NotificationBellProps,
+  NotificationItem,
+  RankedCandidate,
+  ScoreBarProps,
+  TagProps,
+  TagVariant,
+  JobsResponse,
+  NotificationsResponse,
+  RankedCandidatesResponse,
+} from "./types";
 const api = {
   getRankedCandidates: async (
     jobId: string,
@@ -143,9 +78,15 @@ function Tag({ name, variant }: TagProps) {
   };
 
   return (
-    <span className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium ${cls[variant]}`}>
-      {variant === "matched" ? <span className="text-emerald-600 text-xs">✓</span> : null}
-      {variant === "missing" ? <span className="text-red-600 text-xs">✗</span> : null}
+    <span
+      className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium ${cls[variant]}`}
+    >
+      {variant === "matched" ? (
+        <span className="text-emerald-600 text-xs">✓</span>
+      ) : null}
+      {variant === "missing" ? (
+        <span className="text-red-600 text-xs">✗</span>
+      ) : null}
       {name}
     </span>
   );
@@ -156,9 +97,17 @@ function CandidateCard({ candidate, rank }: CandidateCardProps) {
   const score = candidate.final_score ?? 0;
 
   const scoreColor =
-    score >= 70 ? "text-emerald-600" : score >= 40 ? "text-amber-600" : "text-red-600";
+    score >= 70
+      ? "text-emerald-600"
+      : score >= 40
+        ? "text-amber-600"
+        : "text-red-600";
   const borderColor =
-    score >= 70 ? "border-emerald-200" : score >= 40 ? "border-amber-200" : "border-slate-200";
+    score >= 70
+      ? "border-emerald-200"
+      : score >= 40
+        ? "border-amber-200"
+        : "border-slate-200";
 
   const initials = (candidate.name ?? "?")
     .split(" ")
@@ -182,14 +131,18 @@ function CandidateCard({ candidate, rank }: CandidateCardProps) {
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-slate-900">{candidate.name ?? "Anonymous Candidate"}</p>
+            <p className="text-sm font-semibold text-slate-900">
+              {candidate.name ?? "Anonymous Candidate"}
+            </p>
             {candidate.bonus && candidate.bonus > 0 ? (
               <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
                 ★ +{candidate.bonus} bonus
               </span>
             ) : null}
           </div>
-          <p className="mt-0.5 text-xs text-slate-500">{candidate.email ?? "No email provided"}</p>
+          <p className="mt-0.5 text-xs text-slate-500">
+            {candidate.email ?? "No email provided"}
+          </p>
           <div className="mt-2 flex flex-wrap gap-1">
             {(candidate.matched_skills ?? []).map((skill: string) => (
               <Tag key={skill} name={skill} variant="matched" />
@@ -201,7 +154,9 @@ function CandidateCard({ candidate, rank }: CandidateCardProps) {
         </div>
 
         <div className="shrink-0 text-right">
-          <div className={`text-2xl font-black tabular-nums ${scoreColor}`}>{Math.round(score)}</div>
+          <div className={`text-2xl font-black tabular-nums ${scoreColor}`}>
+            {Math.round(score)}
+          </div>
           <div className="text-xs text-slate-500">/ 100</div>
         </div>
       </div>
@@ -211,30 +166,63 @@ function CandidateCard({ candidate, rank }: CandidateCardProps) {
         className="flex w-full items-center justify-between border-t border-slate-200 px-5 py-2 text-xs text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
       >
         <span>Score breakdown</span>
-        <span className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}>▾</span>
+        <span
+          className={`transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        >
+          ▾
+        </span>
       </button>
 
       {open ? (
         <div className="border-t border-slate-200 bg-slate-50 px-5 pb-5 pt-3">
-          <ScoreBar label="Skills" value={candidate.skill_score} color="bg-slate-400" />
-          <ScoreBar label="Projects" value={candidate.project_score} color="bg-violet-500" />
-          <ScoreBar label="Education" value={candidate.education_score} color="bg-cyan-500" />
-          <ScoreBar label="Activity" value={candidate.activity_score} color="bg-emerald-500" />
-          <ScoreBar label="Completeness" value={candidate.completeness_score} color="bg-amber-500" />
+          <ScoreBar
+            label="Skills"
+            value={candidate.skill_score}
+            color="bg-slate-400"
+          />
+          <ScoreBar
+            label="Projects"
+            value={candidate.project_score}
+            color="bg-violet-500"
+          />
+          <ScoreBar
+            label="Education"
+            value={candidate.education_score}
+            color="bg-cyan-500"
+          />
+          <ScoreBar
+            label="Activity"
+            value={candidate.activity_score}
+            color="bg-emerald-500"
+          />
+          <ScoreBar
+            label="Completeness"
+            value={candidate.completeness_score}
+            color="bg-amber-500"
+          />
 
           {(candidate.matched_in_projects ?? []).length > 0 ? (
             <div className="mt-3 border-t border-slate-200 pt-3">
               <p className="mb-2 text-xs uppercase tracking-wider text-slate-600">
                 Matched in projects
               </p>
-              {(candidate.matched_in_projects ?? []).map((projectMatch, index: number) => (
-                <div key={`${projectMatch.project}-${index}`} className="mb-1 flex items-center gap-1.5 text-xs text-slate-600">
-                  <span className="text-slate-400">-&gt;</span>
-                  <span className="font-medium text-slate-700">{projectMatch.project}</span>
-                  <span className="text-slate-400">·</span>
-                  <span>{(projectMatch.matched_skills ?? []).join(", ")}</span>
-                </div>
-              ))}
+              {(candidate.matched_in_projects ?? []).map(
+                (projectMatch, index: number) => (
+                  <div
+                    key={`${projectMatch.project}-${index}`}
+                    className="mb-1 flex items-center gap-1.5 text-xs text-slate-600"
+                  >
+                    <span className="text-slate-400">-&gt;</span>
+                    <span className="font-medium text-slate-700">
+                      {projectMatch.project}
+                    </span>
+                    <span className="text-slate-400">·</span>
+                    <span>
+                      {(projectMatch.matched_skills ?? []).join(", ")}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
           ) : null}
         </div>
@@ -254,7 +242,9 @@ function JobCard({ job, selected, onClick }: JobCardProps) {
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className={`truncate text-sm font-semibold ${selected ? "text-indigo-900" : "text-slate-900"}`}>
+        <p
+          className={`truncate text-sm font-semibold ${selected ? "text-indigo-900" : "text-slate-900"}`}
+        >
           {job.title}
         </p>
         <span className="shrink-0 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">
@@ -262,28 +252,44 @@ function JobCard({ job, selected, onClick }: JobCardProps) {
         </span>
       </div>
       <div className="mt-1 flex items-center gap-2">
-        <span className="text-xs text-slate-600">📍 {job.location ?? "Remote"}</span>
+        <span className="text-xs text-slate-600">
+          📍 {job.location ?? "Remote"}
+        </span>
         {job.experience_required ? (
           <>
             <span className="text-slate-400">·</span>
-            <span className="text-xs text-slate-600">{job.experience_required}</span>
+            <span className="text-xs text-slate-600">
+              {job.experience_required}
+            </span>
           </>
         ) : null}
       </div>
-      <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-600">{job.description}</p>
+      <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-600">
+        {job.description}
+      </p>
       <div className="mt-3 flex flex-wrap gap-1">
         {(job.required_skills ?? []).slice(0, 4).map((skill) => (
-          <Tag key={toSkillName(skill)} name={toSkillName(skill)} variant="required" />
+          <Tag
+            key={toSkillName(skill)}
+            name={toSkillName(skill)}
+            variant="required"
+          />
         ))}
         {(job.required_skills?.length ?? 0) > 4 ? (
-          <span className="text-xs text-slate-500">+{(job.required_skills?.length ?? 0) - 4} more</span>
+          <span className="text-xs text-slate-500">
+            +{(job.required_skills?.length ?? 0) - 4} more
+          </span>
         ) : null}
       </div>
     </button>
   );
 }
 
-function NotificationBell({ notifications, unread, onOpen }: NotificationBellProps) {
+function NotificationBell({
+  notifications,
+  unread,
+  onOpen,
+}: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -311,7 +317,12 @@ function NotificationBell({ notifications, unread, onOpen }: NotificationBellPro
         }}
         className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white transition-colors hover:border-slate-300 hover:bg-slate-50"
       >
-        <svg className="h-4 w-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="h-4 w-4 text-slate-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -329,22 +340,34 @@ function NotificationBell({ notifications, unread, onOpen }: NotificationBellPro
       {open ? (
         <div className="absolute right-0 top-11 z-50 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg shadow-black/10">
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <span className="text-sm font-semibold text-slate-900">Notifications</span>
-            {unread > 0 ? <span className="text-xs text-red-600">{unread} unread</span> : null}
+            <span className="text-sm font-semibold text-slate-900">
+              Notifications
+            </span>
+            {unread > 0 ? (
+              <span className="text-xs text-red-600">{unread} unread</span>
+            ) : null}
           </div>
           <div className="max-h-64 divide-y divide-slate-200 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="px-4 py-6 text-center text-sm text-slate-500">No notifications yet</div>
+              <div className="px-4 py-6 text-center text-sm text-slate-500">
+                No notifications yet
+              </div>
             ) : (
-              notifications.map((notification: NotificationItem, index: number) => (
-                <div
-                  key={`${notification.message}-${index}`}
-                  className={`px-4 py-3 transition-colors hover:bg-slate-50 ${notification.read ? "" : "bg-indigo-50"}`}
-                >
-                  <p className="text-xs leading-relaxed text-slate-700">{notification.message}</p>
-                  <p className="mt-1 text-xs text-slate-500">{notification.time ?? notification.created_at}</p>
-                </div>
-              ))
+              notifications.map(
+                (notification: NotificationItem, index: number) => (
+                  <div
+                    key={`${notification.message}-${index}`}
+                    className={`px-4 py-3 transition-colors hover:bg-slate-50 ${notification.read ? "" : "bg-indigo-50"}`}
+                  >
+                    <p className="text-xs leading-relaxed text-slate-700">
+                      {notification.message}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {notification.time ?? notification.created_at}
+                    </p>
+                  </div>
+                ),
+              )
             )}
           </div>
         </div>
@@ -377,7 +400,7 @@ export default function RecruiterDashboard() {
       try {
         const response = await getJobs();
         const data = response.data as JobsResponse;
-        const list = Array.isArray(data) ? data : data.jobs ?? [];
+        const list = Array.isArray(data) ? data : (data.jobs ?? []);
 
         if (!isActive) {
           return;
@@ -421,9 +444,15 @@ export default function RecruiterDashboard() {
       setCandidatesError(null);
 
       try {
-        const response = await api.getRankedCandidates(resolvedJobId, minScore, limit);
+        const response = await api.getRankedCandidates(
+          resolvedJobId,
+          minScore,
+          limit,
+        );
         const data = response as RankedCandidatesResponse;
-        const list = Array.isArray(data) ? data : data.candidates ?? data.rankings ?? [];
+        const list = Array.isArray(data)
+          ? data
+          : (data.candidates ?? data.rankings ?? []);
 
         if (isActive) {
           setCandidates(list);
@@ -451,7 +480,7 @@ export default function RecruiterDashboard() {
 
     const pollNotifications = async () => {
       // const data = await api.getNotifications();
-      // currenlty empty 
+      // currenlty empty
       const data = { notifications: [], unread: 0 };
       const list = data.notifications ?? [];
 
@@ -460,7 +489,11 @@ export default function RecruiterDashboard() {
       }
 
       setNotifications(list);
-      setUnread(data.unread ?? list.filter((notification: NotificationItem) => !notification.read).length);
+      setUnread(
+        data.unread ??
+          list.filter((notification: NotificationItem) => !notification.read)
+            .length,
+      );
     };
 
     void pollNotifications();
@@ -479,14 +512,24 @@ export default function RecruiterDashboard() {
   );
 
   const avgScore = candidates.length
-    ? Math.round(candidates.reduce((sum, candidate) => sum + (candidate.final_score ?? 0), 0) / candidates.length)
+    ? Math.round(
+        candidates.reduce(
+          (sum, candidate) => sum + (candidate.final_score ?? 0),
+          0,
+        ) / candidates.length,
+      )
     : 0;
   const topScore = candidates.length
-    ? Math.round(Math.max(...candidates.map((candidate) => candidate.final_score ?? 0)))
+    ? Math.round(
+        Math.max(...candidates.map((candidate) => candidate.final_score ?? 0)),
+      )
     : 0;
 
   return (
-    <div className="min-h-screen bg-white text-slate-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div
+      className="min-h-screen bg-white text-slate-900"
+      style={{ fontFamily: "'DM Sans', sans-serif" }}
+    >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&display=swap');
         *, *::before, *::after { box-sizing: border-box; }
@@ -502,7 +545,12 @@ export default function RecruiterDashboard() {
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
-              <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="h-4 w-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -511,16 +559,25 @@ export default function RecruiterDashboard() {
                 />
               </svg>
             </div>
-            <span className="text-sm font-bold tracking-tight text-slate-900">Job Portal</span>
+            <span className="text-sm font-bold tracking-tight text-slate-900">
+              Job Portal
+            </span>
             <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600">
               Recruiter
             </span>
           </div>
-          <NotificationBell notifications={notifications} unread={unread} onOpen={() => setUnread(0)} />
+          <NotificationBell
+            notifications={notifications}
+            unread={unread}
+            onOpen={() => setUnread(0)}
+          />
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-6 px-6 py-6" style={{ height: "calc(100vh - 56px)" }}>
+      <div
+        className="mx-auto flex max-w-7xl gap-6 px-6 py-6"
+        style={{ height: "calc(100vh - 56px)" }}
+      >
         <aside className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -555,20 +612,29 @@ export default function RecruiterDashboard() {
           <div className="flex flex-col gap-2 overflow-y-auto">
             {jobsLoading ? (
               [1, 2, 3].map((value) => (
-                <div key={value} className="h-32 animate-pulse rounded-xl bg-slate-100" />
+                <div
+                  key={value}
+                  className="h-32 animate-pulse rounded-xl bg-slate-100"
+                />
               ))
             ) : jobsError ? (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                 {jobsError}
               </div>
             ) : filteredJobs.length === 0 ? (
-              <p className="py-8 text-center text-xs text-slate-500">No jobs found</p>
+              <p className="py-8 text-center text-xs text-slate-500">
+                No jobs found
+              </p>
             ) : (
               filteredJobs.map((job) => (
                 <JobCard
                   key={getJobId(job) ?? job.title}
                   job={job}
-                  selected={selectedJob ? getJobId(selectedJob) === getJobId(job) : false}
+                  selected={
+                    selectedJob
+                      ? getJobId(selectedJob) === getJobId(job)
+                      : false
+                  }
                   onClick={() => setSelectedJob(job)}
                 />
               ))
@@ -580,9 +646,14 @@ export default function RecruiterDashboard() {
           {selectedJob ? (
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h1 className="text-lg font-bold text-slate-900">{selectedJob.title}</h1>
+                <h1 className="text-lg font-bold text-slate-900">
+                  {selectedJob.title}
+                </h1>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  {selectedJob.location ?? "Remote"} · {selectedJob.experience_required ?? "Experience not specified"} · {selectedJob.applicants?.length ?? 0} applicants
+                  {selectedJob.location ?? "Remote"} ·{" "}
+                  {selectedJob.experience_required ??
+                    "Experience not specified"}{" "}
+                  · {selectedJob.applicants?.length ?? 0} applicants
                 </p>
               </div>
 
@@ -595,7 +666,9 @@ export default function RecruiterDashboard() {
                     max={100}
                     step={5}
                     value={minScore}
-                    onChange={(event) => setMinScore(Number(event.target.value))}
+                    onChange={(event) =>
+                      setMinScore(Number(event.target.value))
+                    }
                     className="w-24 accent-indigo-600"
                   />
                   <span className="w-5 text-right text-xs font-bold tabular-nums text-indigo-600">
@@ -624,7 +697,10 @@ export default function RecruiterDashboard() {
           {!candidatesLoading && candidates.length > 0 ? (
             <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
               <div className="text-xs text-slate-600">
-                <span className="font-bold text-slate-900">{candidates.length}</span> candidates
+                <span className="font-bold text-slate-900">
+                  {candidates.length}
+                </span>{" "}
+                candidates
               </div>
               <div className="h-3 w-px bg-slate-200" />
               <div className="text-xs text-slate-600">
@@ -632,12 +708,15 @@ export default function RecruiterDashboard() {
               </div>
               <div className="h-3 w-px bg-slate-200" />
               <div className="text-xs text-slate-600">
-                Top <span className="font-bold text-emerald-600">{topScore}</span>
+                Top{" "}
+                <span className="font-bold text-emerald-600">{topScore}</span>
               </div>
               {minScore > 0 ? (
                 <>
                   <div className="h-3 w-px bg-slate-200" />
-                  <span className="text-xs text-amber-600">Filtered ≥ {minScore}</span>
+                  <span className="text-xs text-amber-600">
+                    Filtered ≥ {minScore}
+                  </span>
                   <button
                     onClick={() => setMinScore(0)}
                     className="text-xs text-slate-500 underline underline-offset-2 hover:text-slate-700"
@@ -653,7 +732,12 @@ export default function RecruiterDashboard() {
             {!selectedJob ? (
               <div className="flex h-full flex-col items-center justify-center">
                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-100">
-                  <svg className="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="h-6 w-6 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -662,12 +746,17 @@ export default function RecruiterDashboard() {
                     />
                   </svg>
                 </div>
-                <p className="text-sm text-slate-500">Select a job to see ranked candidates</p>
+                <p className="text-sm text-slate-500">
+                  Select a job to see ranked candidates
+                </p>
               </div>
             ) : candidatesLoading ? (
               <div className="flex flex-col gap-3">
                 {[1, 2, 3].map((value) => (
-                  <div key={value} className="h-24 animate-pulse rounded-xl bg-slate-100" />
+                  <div
+                    key={value}
+                    className="h-24 animate-pulse rounded-xl bg-slate-100"
+                  />
                 ))}
               </div>
             ) : candidatesError ? (
@@ -676,7 +765,9 @@ export default function RecruiterDashboard() {
               </div>
             ) : candidates.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center gap-2">
-                <p className="text-sm text-slate-500">No candidates match current filters</p>
+                <p className="text-sm text-slate-500">
+                  No candidates match current filters
+                </p>
                 {minScore > 0 ? (
                   <button
                     onClick={() => setMinScore(0)}
