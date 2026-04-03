@@ -14,4 +14,4 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def root():
-    return {"msg": "API Running 🚀"}
+    return {"msg": "API Running "}
