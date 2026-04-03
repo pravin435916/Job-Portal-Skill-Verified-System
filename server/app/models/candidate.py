@@ -1,7 +1,13 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from beanie import Document
+from typing import List, Dict
 
-class CandidateCreate(BaseModel):
+class Candidate(Document):
     name: str
-    skills: List[str]
-    projects: Optional[List[dict]] = []
+    email: str
+    skills: List[Dict]
+    projects: List[Dict]
+    resume: Dict
+    activity: Dict
+
+    class Settings:
+        name = "candidates"
