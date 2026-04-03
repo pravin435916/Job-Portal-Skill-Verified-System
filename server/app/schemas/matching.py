@@ -1,7 +1,8 @@
 from pydantic import BaseModel
-from typing import List
+from typing import Optional
 
 class CandidateScore(BaseModel):
     candidate_id: str
-    name: str
-    final_score: float
+    score: float
+    status: str = "applied"
+    application_id: Optional[str] = None
