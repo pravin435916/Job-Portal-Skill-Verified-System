@@ -2,95 +2,91 @@ from app.models.candidate import Candidate
 from app.models.job import Job
 
 async def seed_data():
-    # candidates
+
+    # ✅ FIXED CANDIDATES
     candidates = [
-        {
-            "name": "Pravin",
-            "email": "pravin@gmail.com",
-            "skills": [{"name": "React"}, {"name": "MongoDB"}],
-            "projects": [
+        Candidate(
+            first_name="Pravin",
+            last_name="Patil",
+            email="pravin@gmail.com",
+            bio="Full stack developer",
+            phone_number="9876543210",
+            skills=["React", "MongoDB"],
+
+            projects=[
                 {
                     "title": "Job Portal",
-                    "tech_stack": ["React", "MongoDB"],
-                    "verified": True
+                    "desc": "Full stack job portal",
+                    "link": "https://github.com/pravin/job-portal",
+                    "skills": ["React", "MongoDB"],
+                    "media_link": []
                 }
             ],
-            "resume": {
-                "extracted_skills": ["React", "Node"]
-            },
-            "activity": {
-                "github_commits": 100,
-                "last_active_days": 2
-            }
-        },
-        { # data analyst
-            "name": "Rahul",
-            "email": "rahul@gmail.com",
-            "skills": [{"name": "Python"}, {"name": "Data Analysis"}],
-            "projects": [
+
+            education=[
+                {
+                    "institution": "XYZ College",
+                    "degree": "B.Tech",
+                    "field_of_study": "Computer Science",
+                    "cgpa": 8.5,
+                    "start_date": "2021",
+                    "end_date": "2025"
+                }
+            ],
+
+            experience=[]
+        ),
+
+        Candidate(
+            first_name="Rahul",
+            last_name="Sharma",
+            email="rahul@gmail.com",
+            bio="Data analyst",
+            phone_number="9876500000",
+            skills=["Python", "Data Analysis"],
+
+            projects=[
                 {
                     "title": "Sales Data Analysis",
-                    "tech_stack": ["Python", "Pandas"],
-                    "verified": True
+                    "desc": "Analyzed sales data",
+                    "link": "https://github.com/rahul/data-analysis",
+                    "skills": ["Python", "Pandas"],
+                    "media_link": []
                 }
             ],
-            "resume": {
-                "extracted_skills": ["Python", "SQL"]
-            },
-            "activity": {
-                "github_commits": 50,
-                "last_active_days": 5
-            }
-        }
-    ]
 
-    # jobs
+            education=[],
+            experience=[]
+        )
+    ]
     jobs = [
-        {
-            "title": "Frontend Developer",
-            "description": "Looking for React developer with MongoDB knowledge",
-
-            "required_skills": [
-                {"name": "React", "weight": 0.5},
-                {"name": "MongoDB", "weight": 0.3}
-            ],
-
-            "preferred_skills": ["Redux", "TypeScript"],
-            "experience_required": "Fresher"
-        },
-
-        {
-            "title": "Backend Developer",
-            "description": "Looking for FastAPI and Python developer",
-
-            "required_skills": [
-                {"name": "Python", "weight": 0.5},
-                {"name": "FastAPI", "weight": 0.4}
-            ],
-
-            "preferred_skills": ["Docker", "Redis"],
-            "experience_required": "Fresher"
-        },
-
-        {
-            "title": "Full Stack Developer",
-            "description": "Looking for MERN stack developer",
-
-            "required_skills": [
-                {"name": "React", "weight": 0.4},
-                {"name": "Node", "weight": 0.4},
-                {"name": "MongoDB", "weight": 0.2}
-            ],
-
-            "preferred_skills": ["Next.js"],
-            "experience_required": "Fresher"
-        }
-    ]
-
-    # insert if empty
+    {
+        "title": "Frontend Developer",
+        "description": "Looking for React developer",
+        "required_skills": [
+            {"name": "React", "weight": 0.5},
+            {"name": "MongoDB", "weight": 0.3}
+        ],
+        "preferred_skills": ["Redux"],
+        "experience_required": "Fresher"
+    },
+    {
+        "title": "Backend Developer",
+        "description": "Looking for Python developer",
+        "required_skills": [
+            {"name": "Python", "weight": 0.6},
+            {"name": "FastAPI", "weight": 0.4}
+        ],
+        "preferred_skills": ["Docker"],
+        "experience_required": "Fresher"
+    }
+]
     if await Candidate.count() == 0:
-        await Candidate.insert_many(candidates)
+       await Candidate.insert_many(candidates)
+
     if await Job.count() == 0:
-        await Job.insert_many(jobs)
+        await Job.insert_many([Job(**job) for job in jobs])
 
     print("🌱 Seed data inserted")
+
+
