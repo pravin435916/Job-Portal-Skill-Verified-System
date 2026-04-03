@@ -4,6 +4,18 @@ from app.core.seed import seed_data
 from app.core.db import init_db
 from app.core.seed import seed_data
 app = FastAPI(title="Skill Verified Job Portal")
+from fastapi.middleware.cors import CORSMiddleware
+
+
+# cors middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.on_event("startup")
 async def on_startup():

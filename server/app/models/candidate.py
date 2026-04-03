@@ -1,5 +1,5 @@
 from beanie import Document, PydanticObjectId
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 # ---------------- Candidate ----------------
 class Candidate(Document):
@@ -10,6 +10,10 @@ class Candidate(Document):
     resume: Optional[str] = None
     phone_number: Optional[str] = None
     skills: Optional[List[str]] = None
+    # Some records store these profile sections embedded on the candidate document.
+    projects: Optional[List[Dict[str, Any]]] = None
+    education: Optional[List[Dict[str, Any]]] = None
+    experience: Optional[List[Dict[str, Any]]] = None
     github_link: Optional[str] = None
     leetcode_link: Optional[str] = None
     class Settings:

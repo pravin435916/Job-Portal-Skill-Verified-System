@@ -4,12 +4,10 @@ from typing import List, Dict
 class Job(Document):
     title:               str
     description:         str
-    required_skills:     List[Dict]
+    required_skills: List[str]
     preferred_skills:    List[str]
     experience_required: str
-    applicants:          List[str] = []   # ← ADD this line (stores candidate IDs)
-
-    applicants: List[str] = []   # store candidate_ids
+    applicants:          List[str] = []  
 
     class Settings:
         name = "jobs"
