@@ -1,17 +1,16 @@
+import motor
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.core.config import settings
+from beanie import init_beanie
+import os
+from dotenv import load_dotenv
+from app.models.candidate import Candidate
 
-class MongoDB:
-    client: AsyncIOMotorClient = None
-    db = None
+load_dotenv()
 
-mongodb = MongoDB()
+MONGO_URL = os.getenv("MONGO_URL")
 
-async def connect_db():
-    mongodb.client = AsyncIOMotorClient(settings.MONGO_URL)
-    mongodb.db = mongodb.client[settings.DB_NAME]
-    print("✅ MongoDB connected")
 
-async def close_db():
-    mongodb.client.close()
-    print("❌ MongoDB disconnected")
+async def init_db():
+    client = AsyncIOMotorClient(MONGO_URL)
+
+    await init_beanie(database=client.get_database(), document_models=[])
