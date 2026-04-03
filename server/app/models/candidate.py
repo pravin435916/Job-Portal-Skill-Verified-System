@@ -18,7 +18,7 @@ class Candidate(Document):
 
 # ---------------- Project ----------------
 class Project(Document):
-    candidate_id: PydanticObjectId   # 🔥 LINK
+    candidate_id: PydanticObjectId   
     title: str
     desc: str
     link: str

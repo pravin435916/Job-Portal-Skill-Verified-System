@@ -52,3 +52,11 @@ class CandidateResponse(BaseModel):
     projects: Optional[List[ProjectSchema]] = None
     education: Optional[List[EducationSchema]] = None
     experience: Optional[List[ExperienceSchema]] = None
+
+
+class ProjectUpdate(BaseModel):
+    title: Optional[str] = None
+    desc: Optional[str] = None
+    link: Optional[str] = None
+    skills: Optional[List[str]] = None
+    media_link: Optional[List[str]] = None
