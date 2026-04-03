@@ -24,6 +24,7 @@ class Experience(BaseModel):
     end_date: Optional[str] = None
     description: str
 
+
 class Candidate(Document):
     first_name: str
     last_name: str
@@ -35,7 +36,5 @@ class Candidate(Document):
     projects: Optional[List[Project]]=None
     education: Optional[List[Education]]=None
     experience: Optional[List[Experience]]=None
-
-
     class Settings:
         name = "candidates"
