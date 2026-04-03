@@ -3,6 +3,7 @@ from app.models.job import Job
 from app.models.job_ranking import JobRanking
 from datetime import datetime
 import logging
+from bson import ObjectId
 
 logger = logging.getLogger(__name__)
 
@@ -84,14 +85,17 @@ def calculate_final_score(candidate, job):
 # 🚀 MAIN MATCH FUNCTION
 # =========================
 
-async def match_rank_store_retrieve(job_id: str,limit: int = 50):
+async def match_rank_store_retrieve(job_id: str,limit: int = 50,minScore: float = 0):
     logger.info(f"Matching request for job {job_id}")
 
     # 🔥 1. CHECK CACHE
     existing = await JobRanking.find_one(JobRanking.job_id == job_id)
     if existing:
-        logger.info("Returning cached ranking")
-        return existing.rankings[:limit]
+        filtered = [
+            c for c in existing.rankings
+            if c["final_score"] >= minScore
+        ]
+        return filtered[:limit]
 
     # 🔥 2. FETCH JOB
     job = await Job.get(job_id)
@@ -101,13 +105,25 @@ async def match_rank_store_retrieve(job_id: str,limit: int = 50):
     ranked_candidates = []
 
     # 🔥 3. FETCH CANDIDATES
-    candidates = await Candidate.find_all().to_list()
+    # GET APPLICANTS
+    candidate_ids = job.applicants or []
+
+    if not candidate_ids:
+        return {"msg": "No applicants"}
+
+    # 🔥 3. FETCH ONLY REQUIRED CANDIDATES
+    candidates = await Candidate.find(
+        {"_id": {"$in": [ObjectId(cid) for cid in candidate_ids]}}
+    ).to_list()
 
     for candidate in candidates:
         candidate_dict = candidate.dict()
         job_dict = job.dict()
 
         scores = calculate_final_score(candidate_dict, job_dict)
+        # 🔥 FILTER HERE
+        if scores["final_score"] < minScore:
+            continue
 
         # ✅ MATCHED SKILLS
         candidate_skills = candidate.skills or []
