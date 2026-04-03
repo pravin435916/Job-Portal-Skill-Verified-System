@@ -25,6 +25,7 @@ def _to_response(job: Job) -> JobResponse:
         created_at=job.created_at,
         updated_at=job.updated_at,
         application_deadline=job.application_deadline,
+        applicants=job.applicants
     )
 
 

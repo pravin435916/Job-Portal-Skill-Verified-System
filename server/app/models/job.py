@@ -16,12 +16,13 @@ class Job(Document):
     experience_required: str = "0 years"
     salary_range: Optional[str] = None
     openings: int = 1
-    recruiter_id: Indexed(str)       # indexed for fast lookup by recruiter
+    recruiter_id: str = Indexed()      # indexed for fast lookup by recruiter
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     application_deadline: Optional[datetime] = None
-
+    applicants:List[str]=Field(default_factory=list)
+    
     class Settings:
         name = "jobs"                # MongoDB collection name
         indexes = [

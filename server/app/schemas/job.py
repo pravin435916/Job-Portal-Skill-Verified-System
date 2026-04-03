@@ -65,3 +65,4 @@ class JobResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     application_deadline: Optional[datetime]
+    applicants: List[str]
