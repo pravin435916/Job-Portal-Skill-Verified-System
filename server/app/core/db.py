@@ -2,7 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 import os
 from dotenv import load_dotenv
-
+from app.models.application import Application
 from app.models.candidate import Candidate
 from app.models.job import Job
 from app.models.job_ranking import JobRanking
