@@ -2,7 +2,10 @@ from app.models.candidate import Candidate, Project, Education, Experience
 from fastapi import HTTPException
 from beanie import PydanticObjectId
 import asyncio
+import logging
 
+logger = logging.getLogger("app_logger")
+logger.setLevel(logging.INFO)
 
 # ---------------- Candidate ----------------
 async def create_candidate(data: Candidate):
@@ -44,6 +47,7 @@ async def add_project(candidate_id: str, data):
 
     await project.insert()
     return project
+    
 
 
 async def get_projects(candidate_id: str):
@@ -61,7 +65,7 @@ async def update_project(project_id: str, data):
     update_data = data.dict(exclude_unset=True, exclude_none=True)
 
     await project.update({"$set": update_data})
-    await project.fetch()
+    # await project.fetch()
 
     return project
 

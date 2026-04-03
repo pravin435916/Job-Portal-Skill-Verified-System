@@ -3,7 +3,7 @@ from beanie import init_beanie
 import os
 from dotenv import load_dotenv
 
-from app.models.candidate import Candidate
+from app.models.candidate import Candidate, Project, Education, Experience
 from app.models.job import Job
 from app.models.job_ranking import JobRanking
 from app.models.application import Application
@@ -21,7 +21,7 @@ async def init_db():
 
     await init_beanie(
         database=db,
-        document_models=[Candidate, Job, JobRanking, Application]
+        document_models=[Candidate, Job, JobRanking, Application,Project, Education, Experience]
     )
 
     print("✅ Beanie connected")

@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from app.services import candidate_service
 from app.models.candidate import Candidate
-from app.schemas.candidate import CandidateUpdate
+from app.schemas.candidate import CandidateUpdate,ProjectUpdate
 
 router = APIRouter()
 
@@ -34,7 +34,7 @@ async def get_projects(candidate_id: str):
 
 
 @router.patch("/projects/{project_id}")
-async def update_project(project_id: str, data: dict):
+async def update_project(project_id: str, data: ProjectUpdate):
     return await candidate_service.update_project(project_id, data)
 
 
