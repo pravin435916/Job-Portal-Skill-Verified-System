@@ -1,5 +1,5 @@
-from app.core.db import mongodb
-
+from app.models.candidate import Candidate
+from app.models.job import Job
 
 async def seed_data():
     # candidates
@@ -88,10 +88,9 @@ async def seed_data():
     ]
 
     # insert if empty
-    if await mongodb.db.candidates.count_documents({}) == 0:
-        await mongodb.db.candidates.insert_many(candidates)
-
-    if await mongodb.db.jobs.count_documents({}) == 0:
-        await mongodb.db.jobs.insert_many(jobs)
+    if await Candidate.count() == 0:
+        await Candidate.insert_many(candidates)
+    if await Job.count() == 0:
+        await Job.insert_many(jobs)
 
     print("🌱 Seed data inserted")
