@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1.router import api_router
-from app.core.db import connect_db, close_db
+from app.core.db import init_db
 
 app = FastAPI(title="Skill Verified Job Portal")
 
