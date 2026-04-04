@@ -1,0 +1,67 @@
+.container {
+  display: flex;
+  height: 100vh;
+  font-family: Arial;
+}
+
+.sidebar {
+  width: 25%;
+  border-right: 1px solid #ddd;
+  padding: 15px;
+}
+
+.job-card {
+  padding: 10px;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.job-card.active {
+  background: #eef3ff;
+  border: 1px solid blue;
+}
+
+.job-details {
+  width: 75%;
+  padding: 20px;
+}
+
+.candidate-card {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  border-radius: 10px;
+}
+
+.skills span {
+  padding: 5px 10px;
+  margin: 5px;
+  border-radius: 6px;
+  display: inline-block;
+  background: #eee;
+}
+
+.good {
+  background: #d4edda;
+}
+
+.bad {
+  background: #f8d7da;
+}
+
+.score {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.green {
+  color: green;
+}
+
+.red {
+  color: red;
+}

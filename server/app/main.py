@@ -11,8 +11,6 @@ async def on_startup():
     await init_db()
 
 
-
-
 @app.get("/")
 def root():
     return {"msg": "API Running 🚀"}
