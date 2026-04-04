@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from app.services import candidate_service
 from app.models.candidate import Candidate
 from app.schemas.candidate import (
@@ -7,6 +7,13 @@ from app.schemas.candidate import (
     EducationUpdate,
     ExperienceUpdate,
 )
+from pydantic import BaseModel
+from typing import Optional
+import os
+import uuid
+import boto3
+from botocore.client import Config
+from botocore.exceptions import BotoCoreError, ClientError
 
 router = APIRouter()
 
@@ -46,6 +53,51 @@ async def update_project(project_id: str, data: ProjectUpdate):
 @router.delete("/projects/{project_id}")
 async def delete_project(project_id: str):
     return await candidate_service.delete_project(project_id)
+
+
+class ProjectMediaPresignRequest(BaseModel):
+    filename: str
+    content_type: Optional[str] = None
+
+
+@router.post("/projects/presign")
+async def presign_project_media_upload(payload: ProjectMediaPresignRequest):
+    bucket = os.getenv("AWS_S3_BUCKET")
+    region = os.getenv("AWS_REGION")
+    cdn_domain = os.getenv("CLOUDFRONT_DOMAIN")
+    expires = int(os.getenv("S3_PRESIGN_EXPIRES", "900"))
+
+    if not bucket or not region:
+        raise HTTPException(
+            status_code=500,
+            detail="AWS_S3_BUCKET and AWS_REGION must be set on the server",
+        )
+
+    ext = os.path.splitext(payload.filename)[1].lower()
+    key = f"projects/{uuid.uuid4().hex}{ext}"
+    content_type = payload.content_type or "application/octet-stream"
+
+    try:
+        s3 = boto3.client(
+            "s3",
+            region_name=region,
+            endpoint_url=f"https://s3.{region}.amazonaws.com",
+            config=Config(signature_version="s3v4", s3={"addressing_style": "virtual"}),
+        )
+        upload_url = s3.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": bucket, "Key": key, "ContentType": content_type},
+            ExpiresIn=expires,
+        )
+    except (BotoCoreError, ClientError) as exc:
+        raise HTTPException(status_code=500, detail="Failed to generate presigned URL") from exc
+
+    if cdn_domain:
+        cdn_url = f"https://{cdn_domain}/{key}"
+    else:
+        cdn_url = f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
+
+    return {"upload_url": upload_url, "key": key, "cdn_url": cdn_url}
 
 
 # ---------------- Education ----------------

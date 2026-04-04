@@ -4,6 +4,7 @@ import {
   addEducation,
   addExperience,
   addProject,
+  createProjectMediaPresign,
   deleteEducation,
   deleteExperience,
   deleteProject,
@@ -42,7 +43,7 @@ const emptyProjectForm = (): ProjectForm => ({
   desc: "",
   link: "",
   skillsText: "",
-  mediaText: "",
+  mediaLinks: [],
 });
 
 const emptyEducationForm = (): EducationForm => ({
@@ -67,6 +68,7 @@ const CandidateProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  const [uploadingMediaId, setUploadingMediaId] = useState<string | null>(null);
 
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     first_name: "",
@@ -92,6 +94,10 @@ const CandidateProfile = () => {
 
   const [editingProjects, setEditingProjects] = useState<
     Record<string, ProjectForm>
+  >({});
+  const [newProjectFiles, setNewProjectFiles] = useState<File[]>([]);
+  const [editProjectFiles, setEditProjectFiles] = useState<
+    Record<string, File[]>
   >({});
   const [editingEducation, setEditingEducation] = useState<
     Record<string, EducationForm>
@@ -191,14 +197,16 @@ const CandidateProfile = () => {
   const handleProjectAdd = async () => {
     setSaving("project-add");
     try {
+      const uploadedUrls = await uploadProjectMediaFiles(newProjectFiles);
       await addProject(candidateId, {
         title: newProject.title.trim(),
         desc: newProject.desc.trim(),
         link: newProject.link.trim(),
         skills: toList(newProject.skillsText),
-        media_link: toList(newProject.mediaText),
+        media_link: [...newProject.mediaLinks, ...uploadedUrls],
       });
       setNewProject(emptyProjectForm());
+      setNewProjectFiles([]);
       await refreshProfile();
     } finally {
       setSaving(null);
@@ -213,14 +221,22 @@ const CandidateProfile = () => {
 
     setSaving(`project-update-${projectId}`);
     try {
+      const uploadedUrls = await uploadProjectMediaFiles(
+        editProjectFiles[projectId] ?? [],
+      );
       await updateProject(projectId, {
         title: payload.title.trim(),
         desc: payload.desc.trim(),
         link: payload.link.trim(),
         skills: toList(payload.skillsText),
-        media_link: toList(payload.mediaText),
+        media_link: [...payload.mediaLinks, ...uploadedUrls],
       });
       setEditingProjects((current) => {
+        const next = { ...current };
+        delete next[projectId];
+        return next;
+      });
+      setEditProjectFiles((current) => {
         const next = { ...current };
         delete next[projectId];
         return next;
@@ -239,6 +255,84 @@ const CandidateProfile = () => {
     } finally {
       setSaving(null);
     }
+  };
+
+  const uploadProjectMediaFiles = async (files: File[]) => {
+    if (!files.length) {
+      return [];
+    }
+
+    const uploadedUrls: string[] = [];
+    setUploadingMediaId("uploading");
+    try {
+      for (const file of files) {
+        const response = await createProjectMediaPresign({
+          filename: file.name,
+          content_type: file.type || "application/octet-stream",
+        });
+        const { upload_url, cdn_url } = response.data as {
+          upload_url: string;
+          cdn_url: string;
+        };
+
+        const uploadResponse = await fetch(upload_url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          body: file,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`S3 upload failed (${uploadResponse.status})`);
+        }
+
+        uploadedUrls.push(cdn_url);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? `Media upload failed: ${err.message}`
+          : "Media upload failed.",
+      );
+      throw err;
+    } finally {
+      setUploadingMediaId(null);
+    }
+
+    return uploadedUrls;
+  };
+
+  const handleProjectMediaSelect = (
+    files: FileList | null,
+    target: { kind: "new" } | { kind: "edit"; projectId: string },
+  ) => {
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const selected = Array.from(files);
+    const allowed = selected.filter(
+      (file) => file.type.startsWith("image/") || file.type.startsWith("video/"),
+    );
+    if (allowed.length !== selected.length) {
+      setError("Only image and video files are allowed.");
+    }
+    if (allowed.length === 0) {
+      return;
+    }
+    if (target.kind === "new") {
+      setNewProjectFiles((current) => [...current, ...allowed]);
+      return;
+    }
+
+    setEditProjectFiles((current) => ({
+      ...current,
+      [target.projectId]: [
+        ...(current[target.projectId] ?? []),
+        ...allowed,
+      ],
+    }));
   };
 
   const handleEducationAdd = async () => {
@@ -392,17 +486,24 @@ const CandidateProfile = () => {
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-2">
           <ProjectsSection
             projects={projects}
             editingProjects={editingProjects}
             setEditingProjects={setEditingProjects}
             newProject={newProject}
             setNewProject={setNewProject}
+            newProjectFiles={newProjectFiles}
+            setNewProjectFiles={setNewProjectFiles}
+            editProjectFiles={editProjectFiles}
+            setEditProjectFiles={setEditProjectFiles}
             onAdd={handleProjectAdd}
             onUpdate={handleProjectUpdate}
             onDelete={handleProjectDelete}
+            onSelectMedia={handleProjectMediaSelect}
+            uploadingMediaId={uploadingMediaId}
             saving={saving}
+            className="lg:col-span-2"
           />
           <EducationSection
             education={education}

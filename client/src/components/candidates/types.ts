@@ -51,7 +51,7 @@ export type ProjectForm = {
   desc: string;
   link: string;
   skillsText: string;
-  mediaText: string;
+  mediaLinks: string[];
 };
 
 export type EducationForm = {

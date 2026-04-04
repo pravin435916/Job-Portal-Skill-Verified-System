@@ -37,6 +37,11 @@ export const updateProject = (projectId: string, data: unknown) =>
 export const deleteProject = (projectId: string) =>
   API.delete(`/candidate/projects/${projectId}`);
 
+export const createProjectMediaPresign = (data: {
+  filename: string;
+  content_type?: string | null;
+}) => API.post(`/candidate/projects/presign`, data);
+
 export const addEducation = (candidateId: string, data: unknown) =>
   API.post(`/candidate/${candidateId}/education`, data);
 
