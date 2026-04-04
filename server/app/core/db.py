@@ -7,6 +7,7 @@ from app.models.candidate import Candidate, Project, Education, Experience
 from app.models.job import Job
 from app.models.job_ranking import JobRanking
 from app.models.application import Application
+from app.models.recruiter import Recruiter
 
 load_dotenv()
 
@@ -21,7 +22,16 @@ async def init_db():
 
     await init_beanie(
         database=db,
-        document_models=[Candidate, Job, JobRanking, Application,Project, Education, Experience]
+        document_models=[
+            Candidate,
+            Job,
+            JobRanking,
+            Application,
+            Project,
+            Education,
+            Experience,
+            Recruiter,
+        ]
     )
 
     print("✅ Beanie connected")

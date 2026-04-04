@@ -27,13 +27,22 @@ def _extract_skill_names(values) -> set[str]:
 
 def job_to_dict(job) -> dict:
     return {
-        "job_id":              str(job.id),
-        "title":               job.title,
-        "description":         job.description,
-        "required_skills":     job.required_skills,
-        "preferred_skills":    job.preferred_skills,
+        "job_id": str(job.id),
+        "recruiter_id": job.recruiter_id,
+        "title": job.title,
+        "description": job.description,
+        "company_name": job.company_name,
+        "location": job.location,
+        "job_type": job.job_type,
+        "job_mode": job.job_mode,
+        "required_skills": job.required_skills,
+        "preferred_skills": job.preferred_skills,
         "experience_required": job.experience_required,
-        "applicants":          job.applicants,
+        "salary_range": job.salary_range,
+        "openings": job.openings,
+        "application_deadline": job.application_deadline,
+        "applicants": job.applicants,
+        "applicants_count": len(job.applicants),
     }
 
 
@@ -84,15 +93,24 @@ async def recommend_jobs(candidate_id: str):
             # score = number of matched skills
             score = len(common)
             matched.append({
-                "job_id":           str(job.id),
-                "title":            job.title,
-                "description":      job.description,
-                "required_skills":  job.required_skills,
+                "job_id": str(job.id),
+                "recruiter_id": job.recruiter_id,
+                "title": job.title,
+                "description": job.description,
+                "company_name": job.company_name,
+                "location": job.location,
+                "job_type": job.job_type,
+                "job_mode": job.job_mode,
+                "required_skills": job.required_skills,
                 "preferred_skills": job.preferred_skills,
                 "experience_required": job.experience_required,
-                "matched_skills":   list(common),
-                "match_score":      score,
-                "reason":           f"You know: {', '.join(common)}"
+                "salary_range": job.salary_range,
+                "openings": job.openings,
+                "application_deadline": job.application_deadline,
+                "matched_skills": list(common),
+                "match_score": score,
+                "reason": f"You know: {', '.join(common)}",
+                "applicants_count": len(job.applicants),
             })
 
     # 4. Sort by match score
