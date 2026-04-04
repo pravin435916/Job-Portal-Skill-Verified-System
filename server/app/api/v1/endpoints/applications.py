@@ -1,40 +1,104 @@
-from fastapi import APIRouter, HTTPException
+from datetime import datetime
 
-from app.schemas.application import ApplicationResponse, ApplicationStatusUpdateRequest
-from app.services.application_service import to_application_response, upsert_application_status
-from app.models.job import Job
+from beanie import PydanticObjectId
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
 from app.models.application import Application
 from app.models.candidate import Candidate
-from beanie import PydanticObjectId
-from datetime import datetime
-from pydantic import BaseModel
+from app.models.job import Job
+from app.schemas.application import ApplicationResponse, ApplicationStatusUpdateRequest
 
 router = APIRouter()
 
+ALLOWED_STATUSES = {"applied", "shortlisted", "rejected", "interview_scheduled"}
+STATUS_MESSAGES = {
+    "applied": "Application submitted successfully",
+    "shortlisted": "Candidate has been shortlisted",
+    "rejected": "Candidate was not selected",
+    "interview_scheduled": "Interview has been scheduled",
+}
+
+
+def _normalize_object_id(value: str, field_name: str) -> str:
+    try:
+        return str(PydanticObjectId(value))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name}") from exc
+
+
+def _to_application_response(application: Application) -> dict:
+    return {
+        "id": str(application.id),
+        "job_id": application.job_id,
+        "candidate_id": application.candidate_id,
+        "score": application.score,
+        "status": application.status,
+        "interview_at": application.interview_at,
+        "interview_mode": application.interview_mode,
+        "notes": application.notes,
+    }
+
+
+def _normalize_status(value: str) -> str:
+    normalized = value.strip().lower()
+    if normalized == "interview":
+        normalized = "interview_scheduled"
+
+    if normalized not in ALLOWED_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Unsupported status: {value}")
+
+    return normalized
+
+
+async def _get_application_by_id_or_404(application_id: str) -> Application:
+    normalized_application_id = _normalize_object_id(application_id, "application ID")
+    app = await Application.get(PydanticObjectId(normalized_application_id))
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    return app
+
+
+def _job_lookup_query(job_id: str, normalized_job_id: str) -> dict:
+    job_oid = PydanticObjectId(normalized_job_id)
+    return {
+        "$or": [
+            {"job_id": normalized_job_id},
+            {"job_id": job_id},
+            {"job_id": job_oid},
+        ]
+    }
+
+
 @router.get("/job/{job_id}", response_model=list[ApplicationResponse])
+@router.get("/jobs/{job_id}", response_model=list[ApplicationResponse])
+@router.get("/jobs/{job_id}/applications", response_model=list[ApplicationResponse])
 async def get_applications_for_job(job_id: str):
-    # use service function to fetch applications for the job
-    applications = await Application.find(Application.job_id == job_id).to_list()
-    return [to_application_response(app) for app in applications]
+    normalized_job_id = _normalize_object_id(job_id, "job ID")
+    applications = await Application.find(
+        _job_lookup_query(job_id, normalized_job_id)
+    ).sort("-applied_at").to_list()
+    return [_to_application_response(app) for app in applications]
 
 
 @router.put("/{application_id}/status", response_model=ApplicationResponse)
 async def update_application_status(application_id: str, payload: ApplicationStatusUpdateRequest):
-    try:
-        updated = await upsert_application_status(
-            application_id=application_id,
-            status=payload.status,
-            interview_at=payload.interview_at,
-            interview_mode=payload.interview_mode,
-            notes=payload.notes,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    app = await _get_application_by_id_or_404(application_id)
+    next_status = _normalize_status(payload.status)
 
-    if not updated:
-        raise HTTPException(status_code=404, detail="Application not found")
+    if next_status not in {"shortlisted", "rejected", "interview_scheduled", "applied"}:
+        raise HTTPException(status_code=400, detail="Unsupported recruiter status")
 
-    return to_application_response(updated)
+    app.status = next_status
+    app.interview_at = payload.interview_at
+    app.interview_mode = payload.interview_mode
+    app.notes = payload.notes
+    app.updated_at = datetime.utcnow()
+    await app.save()
+
+    return _to_application_response(app)
+
+
 class ApplyRequest(BaseModel):
     job_id:       str
     candidate_id: str     # send this manually until auth is ready
@@ -50,68 +114,73 @@ async def apply_for_job(body: ApplyRequest):
     }
     """
     # 1. Check candidate exists
-    try:
-        c_oid = PydanticObjectId(body.candidate_id)
-        candidate = await Candidate.get(c_oid)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid candidate ID")
+    normalized_candidate_id = _normalize_object_id(body.candidate_id, "candidate ID")
+    candidate_oid = PydanticObjectId(normalized_candidate_id)
+    candidate = await Candidate.get(candidate_oid)
 
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
 
     # 2. Check job exists
-    try:
-        j_oid = PydanticObjectId(body.job_id)
-        job = await Job.get(j_oid)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid job ID")
+    normalized_job_id = _normalize_object_id(body.job_id, "job ID")
+    job_oid = PydanticObjectId(normalized_job_id)
+    job = await Job.get(job_oid)
 
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
     # 3. Prevent duplicate application
-    if body.candidate_id in job.applicants:
+    existing = await Application.find_one(
+        {
+            "$or": [
+                {
+                    "job_id": normalized_job_id,
+                    "candidate_id": normalized_candidate_id,
+                },
+                {
+                    "job_id": job_oid,
+                    "candidate_id": candidate_oid,
+                },
+            ]
+        }
+    )
+    if existing:
         raise HTTPException(status_code=409, detail="You already applied for this job")
 
     # 4. Save application document
     app = Application(
-        job_id       = body.job_id,
-        candidate_id = body.candidate_id,
+        job_id       = normalized_job_id,
+        candidate_id = normalized_candidate_id,
         status       = "applied",
         applied_at   = datetime.utcnow()
     )
     await app.insert()
 
     # 5. Add candidate_id to job's applicants list
-    job.applicants.append(body.candidate_id)
+    job.applicants.append(normalized_candidate_id)
     await job.save()
 
     return {
         "message":        "Applied successfully ✅",
         "application_id": str(app.id),
-        "job_id":         body.job_id,
+        "job_id":         normalized_job_id,
         "job_title":      job.title,
-        "candidate_id":   body.candidate_id,
+        "candidate_id":   normalized_candidate_id,
         "candidate_name": f"{candidate.first_name} {candidate.last_name}",
         "status":         "applied"
     }
 
 
 @router.get("/track/{application_id}")
+@router.get("/{application_id}/status")
+@router.get("/status/{application_id}")
 async def track_application(application_id: str):
     """
     GET /api/v1/applications/track/{application_id}
     Returns current status of a specific application.
     Paste application_id from the apply response.
     """
-    try:
-        oid = PydanticObjectId(application_id)
-        app = await Application.get(oid)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid application ID")
-
-    if not app:
-        raise HTTPException(status_code=404, detail="Application not found")
+    app = await _get_application_by_id_or_404(application_id)
 
     # fetch job title
     try:
@@ -120,21 +189,19 @@ async def track_application(application_id: str):
     except Exception:
         job_title = "Unknown"
 
-    messages = {
-        "applied":     "✅ Application submitted successfully",
-        "shortlisted": "🌟 You have been shortlisted!",
-        "rejected":    "❌ Not selected this time",
-        "interview":   "📅 Interview has been scheduled",
-    }
+    status_value = _normalize_status(app.status)
 
     return {
         "application_id": str(app.id),
         "job_id":         app.job_id,
         "job_title":      job_title,
         "candidate_id":   app.candidate_id,
-        "status":         app.status,
-        "status_message": messages.get(app.status, "Unknown"),
+        "status":         status_value,
+        "status_message": STATUS_MESSAGES.get(status_value, "Unknown"),
         "applied_at":     app.applied_at,
+        "interview_at":   app.interview_at,
+        "interview_mode": app.interview_mode,
+        "notes":          app.notes,
     }
 
 
@@ -146,16 +213,21 @@ async def my_applications(candidate_id: str):
     Paste candidate_id from Atlas.
     """
     # Validate candidate exists
-    try:
-        candidate = await Candidate.get(PydanticObjectId(candidate_id))
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid candidate ID")
+    normalized_candidate_id = _normalize_object_id(candidate_id, "candidate ID")
+    candidate_oid = PydanticObjectId(normalized_candidate_id)
+    candidate = await Candidate.get(candidate_oid)
 
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
 
     apps = await Application.find(
-        Application.candidate_id == candidate_id
+        {
+            "$or": [
+                {"candidate_id": normalized_candidate_id},
+                {"candidate_id": candidate_id},
+                {"candidate_id": candidate_oid},
+            ]
+        }
     ).to_list()
 
     result = []

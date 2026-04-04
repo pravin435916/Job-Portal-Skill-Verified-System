@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import type { ApplicationStatusUpdatePayload } from "../../pages/recruiters/types";
+
 const API = axios.create({
   baseURL: "http://127.0.0.1:8000/api/v1",
 });
@@ -20,3 +22,11 @@ export const getRankedCandidates = (
 // Optional notifications endpoint used by recruiter dashboard
 export const getNotifications = () =>
   API.get("/notifications");
+
+export const getJobApplications = (jobId: string) =>
+  API.get(`/applications/jobs/${jobId}/applications`);
+
+export const updateApplicationStatus = (
+  applicationId: string,
+  payload: ApplicationStatusUpdatePayload,
+) => API.put(`/applications/${applicationId}/status`, payload);

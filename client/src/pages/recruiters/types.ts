@@ -70,6 +70,24 @@ export type RankedCandidate = {
     projects?: CandidateProject[];
 };
 
+export type ApplicationRecord = {
+    id: string;
+    job_id: string;
+    candidate_id: string;
+    score?: number;
+    status: string;
+    interview_at?: string | null;
+    interview_mode?: string | null;
+    notes?: string | null;
+};
+
+export type ApplicationStatusUpdatePayload = {
+    status: "shortlisted" | "rejected" | "interview_scheduled" | "applied";
+    interview_at?: string | null;
+    interview_mode?: string | null;
+    notes?: string | null;
+};
+
 export type NotificationItem = {
     message: string;
     time?: string;

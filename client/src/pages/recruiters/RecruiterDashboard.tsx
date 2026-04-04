@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  getJobApplications as getJobApplicationsApi,
   getJobs,
   getNotifications as getNotificationsApi,
   getRankedCandidates as getRankedCandidatesApi,
+  updateApplicationStatus as updateApplicationStatusApi,
 } from "../../api/recruiters/api";
 import type {
+  ApplicationRecord,
+  ApplicationStatusUpdatePayload,
   Job,
   CandidateCardProps,
   Skill,
@@ -35,6 +39,17 @@ const api = {
     } catch {
       return { notifications: [], unread: 0 };
     }
+  },
+  getJobApplications: async (jobId: string): Promise<ApplicationRecord[]> => {
+    const response = await getJobApplicationsApi(jobId);
+    return response.data as ApplicationRecord[];
+  },
+  updateApplicationStatus: async (
+    applicationId: string,
+    payload: ApplicationStatusUpdatePayload,
+  ): Promise<ApplicationRecord> => {
+    const response = await updateApplicationStatusApi(applicationId, payload);
+    return response.data as ApplicationRecord;
   },
 };
 
@@ -115,6 +130,14 @@ function CandidateCard({ candidate, rank, onViewProfile }: CandidateCardProps) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+  const statusLabel = candidate.status ?? "applied";
+
+  const statusStyles: Record<string, string> = {
+    applied: "border-slate-200 bg-slate-50 text-slate-700",
+    shortlisted: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    rejected: "border-red-200 bg-red-50 text-red-700",
+    interview_scheduled: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  };
 
   return (
     <div
@@ -134,6 +157,11 @@ function CandidateCard({ candidate, rank, onViewProfile }: CandidateCardProps) {
             <p className="text-sm font-semibold text-slate-900">
               {candidate.name ?? "Anonymous Candidate"}
             </p>
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusStyles[statusLabel] ?? statusStyles.applied}`}
+            >
+              {statusLabel.replace(/_/g, " ")}
+            </span>
             {candidate.bonus && candidate.bonus > 0 ? (
               <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
                 ★ +{candidate.bonus} bonus
@@ -243,11 +271,19 @@ function CandidateCard({ candidate, rank, onViewProfile }: CandidateCardProps) {
 
 function CandidateProfileDrawer({
   candidate,
+  application,
+  onAction,
+  actionLoading,
   onClose,
 }: {
   candidate: RankedCandidate | null;
+  application: ApplicationRecord | null;
+  onAction: (status: ApplicationStatusUpdatePayload["status"]) => void;
+  actionLoading: boolean;
   onClose: () => void;
 }) {
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
+
   if (!candidate) {
     return null;
   }
@@ -260,7 +296,8 @@ function CandidateProfileDrawer({
     .slice(0, 2)
     .toUpperCase();
   const profileId = candidate.candidate_id ?? candidate._id ?? "-";
-  const statusLabel = candidate.status ?? "applied";
+  const statusLabel = application?.status ?? candidate.status ?? "applied";
+  const hasApplication = Boolean(application?.id);
 
   return (
     <>
@@ -269,8 +306,8 @@ function CandidateProfileDrawer({
         className="fixed inset-0 z-40 bg-slate-900/30"
         aria-label="Close candidate profile"
       />
-      <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l border-slate-200 bg-white shadow-2xl">
-        <div className="flex h-full flex-col">
+      <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl overflow-hidden border-l border-slate-200 bg-white shadow-2xl">
+        <div className="flex h-full min-h-0 flex-col">
           <div className="border-b border-slate-200 px-5 py-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -303,45 +340,63 @@ function CandidateProfileDrawer({
                 ID: {profileId}
               </span>
             </div>
+
           </div>
 
-          <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
             <section>
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                Score Breakdown
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Recruiter Action
               </h3>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <ScoreBar
-                  label="Skills"
-                  value={candidate.skill_score}
-                  color="bg-slate-500"
-                />
-                <ScoreBar
-                  label="Projects"
-                  value={candidate.project_score}
-                  color="bg-violet-500"
-                />
-                <ScoreBar
-                  label="Education"
-                  value={candidate.education_score}
-                  color="bg-cyan-500"
-                />
-                <ScoreBar
-                  label="Activity"
-                  value={candidate.activity_score}
-                  color="bg-emerald-500"
-                />
-                <ScoreBar
-                  label="Completeness"
-                  value={candidate.completeness_score}
-                  color="bg-amber-500"
-                />
-              </div>
-              {candidate.bonus && candidate.bonus > 0 ? (
-                <p className="mt-2 text-xs font-medium text-amber-700">
-                  Bonus points: +{candidate.bonus}
+              <div className="relative rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs text-slate-600">
+                  {hasApplication
+                    ? "Use one action button to set the candidate status."
+                    : "Application record not found for the selected job."}
                 </p>
-              ) : null}
+                <button
+                  disabled={!hasApplication || actionLoading}
+                  onClick={() => setActionMenuOpen((value) => !value)}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Take action
+                  <span className={`transition-transform ${actionMenuOpen ? "rotate-180" : ""}`}>
+                    ▾
+                  </span>
+                </button>
+
+                {actionMenuOpen ? (
+                  <div className="absolute left-3 top-full z-10 mt-2 w-48 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg shadow-black/10">
+                    <button
+                      onClick={() => {
+                        onAction("shortlisted");
+                        setActionMenuOpen(false);
+                      }}
+                      className="block w-full px-3 py-2 text-left text-xs font-medium text-emerald-700 hover:bg-emerald-50"
+                    >
+                      Shortlist
+                    </button>
+                    <button
+                      onClick={() => {
+                        onAction("rejected");
+                        setActionMenuOpen(false);
+                      }}
+                      className="block w-full px-3 py-2 text-left text-xs font-medium text-red-700 hover:bg-red-50"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => {
+                        onAction("interview_scheduled");
+                        setActionMenuOpen(false);
+                      }}
+                      className="block w-full px-3 py-2 text-left text-xs font-medium text-indigo-700 hover:bg-indigo-50"
+                    >
+                      Interview scheduled
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </section>
 
             <section>
@@ -493,9 +548,46 @@ function CandidateProfileDrawer({
               </h3>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
                 <p>
-                  Application ID: {candidate.application_id ? candidate.application_id : "N/A"}
+                  Application ID: {application?.id ?? candidate.application_id ?? "N/A"}
                 </p>
                 <p className="mt-1">Candidate ID: {profileId}</p>
+                <p className="mt-1">Current status: {statusLabel}</p>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Recruiter Action
+              </h3>
+              <div className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-xs text-slate-600">
+                  {hasApplication
+                    ? "Use one button to set the candidate status."
+                    : "Application record not found for the selected job."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    disabled={!hasApplication || actionLoading}
+                    onClick={() => onAction("shortlisted")}
+                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Shortlist
+                  </button>
+                  <button
+                    disabled={!hasApplication || actionLoading}
+                    onClick={() => onAction("rejected")}
+                    className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    disabled={!hasApplication || actionLoading}
+                    onClick={() => onAction("interview_scheduled")}
+                    className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Interview
+                  </button>
+                </div>
               </div>
             </section>
           </div>
@@ -665,6 +757,9 @@ export default function RecruiterDashboard() {
   const [jobSearch, setJobSearch] = useState<string>("");
   const [profileCandidate, setProfileCandidate] =
     useState<RankedCandidate | null>(null);
+  const [jobApplications, setJobApplications] = useState<ApplicationRecord[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = useState<boolean>(false);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   useEffect(() => {
     let isActive = true;
@@ -715,6 +810,7 @@ export default function RecruiterDashboard() {
 
   useEffect(() => {
     if (!selectedJob) {
+      setJobApplications([]);
       return;
     }
 
@@ -756,6 +852,27 @@ export default function RecruiterDashboard() {
     };
 
     void loadCandidates();
+
+    const loadApplications = async () => {
+      setApplicationsLoading(true);
+
+      try {
+        const response = await api.getJobApplications(resolvedJobId);
+        if (isActive) {
+          setJobApplications(response);
+        }
+      } catch {
+        if (isActive) {
+          setJobApplications([]);
+        }
+      } finally {
+        if (isActive) {
+          setApplicationsLoading(false);
+        }
+      }
+    };
+
+    void loadApplications();
 
     return () => {
       isActive = false;
@@ -811,6 +928,58 @@ export default function RecruiterDashboard() {
         Math.max(...candidates.map((candidate) => candidate.final_score ?? 0)),
       )
     : 0;
+  const selectedApplication = profileCandidate
+    ? jobApplications.find(
+        (application) =>
+          application.candidate_id ===
+          (profileCandidate.candidate_id ?? profileCandidate._id),
+      ) ?? null
+    : null;
+
+  const handleUpdateCandidateStatus = async (
+    status: ApplicationStatusUpdatePayload["status"],
+  ) => {
+    if (!selectedApplication) {
+      return;
+    }
+
+    setActionLoading(true);
+
+    try {
+      const updatedApplication = await api.updateApplicationStatus(
+        selectedApplication.id,
+        { status },
+      );
+
+      setJobApplications((currentApplications) =>
+        currentApplications.map((application) =>
+          application.id === updatedApplication.id ? updatedApplication : application,
+        ),
+      );
+
+      setCandidates((currentCandidates) =>
+        currentCandidates.map((candidate) => {
+          const candidateId = candidate.candidate_id ?? candidate._id;
+
+          return candidateId === updatedApplication.candidate_id
+            ? { ...candidate, status: updatedApplication.status, application_id: updatedApplication.id }
+            : candidate;
+        }),
+      );
+
+      setProfileCandidate((currentCandidate) =>
+        currentCandidate
+          ? {
+              ...currentCandidate,
+              status: updatedApplication.status,
+              application_id: updatedApplication.id,
+            }
+          : currentCandidate,
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div
@@ -1082,6 +1251,9 @@ export default function RecruiterDashboard() {
 
       <CandidateProfileDrawer
         candidate={profileCandidate}
+        application={selectedApplication}
+        onAction={handleUpdateCandidateStatus}
+        actionLoading={actionLoading || applicationsLoading}
         onClose={() => setProfileCandidate(null)}
       />
     </div>
