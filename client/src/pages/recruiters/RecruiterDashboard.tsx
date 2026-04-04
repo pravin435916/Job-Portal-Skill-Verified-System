@@ -92,7 +92,7 @@ function Tag({ name, variant }: TagProps) {
   );
 }
 
-function CandidateCard({ candidate, rank }: CandidateCardProps) {
+function CandidateCard({ candidate, rank, onViewProfile }: CandidateCardProps) {
   const [open, setOpen] = useState(false);
   const score = candidate.final_score ?? 0;
 
@@ -173,6 +173,16 @@ function CandidateCard({ candidate, rank }: CandidateCardProps) {
         </span>
       </button>
 
+      <div className="border-t border-slate-200 bg-white px-5 py-2.5">
+        <button
+          onClick={onViewProfile}
+          className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100"
+        >
+          View profile
+          <span aria-hidden>→</span>
+        </button>
+      </div>
+
       {open ? (
         <div className="border-t border-slate-200 bg-slate-50 px-5 pb-5 pt-3">
           <ScoreBar
@@ -228,6 +238,270 @@ function CandidateCard({ candidate, rank }: CandidateCardProps) {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function CandidateProfileDrawer({
+  candidate,
+  onClose,
+}: {
+  candidate: RankedCandidate | null;
+  onClose: () => void;
+}) {
+  if (!candidate) {
+    return null;
+  }
+
+  const fullName = candidate.name ?? "Anonymous Candidate";
+  const initials = fullName
+    .split(" ")
+    .map((part: string) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const profileId = candidate.candidate_id ?? candidate._id ?? "-";
+  const statusLabel = candidate.status ?? "applied";
+
+  return (
+    <>
+      <button
+        onClick={onClose}
+        className="fixed inset-0 z-40 bg-slate-900/30"
+        aria-label="Close candidate profile"
+      />
+      <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l border-slate-200 bg-white shadow-2xl">
+        <div className="flex h-full flex-col">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-cyan-500 text-sm font-bold text-white">
+                  {initials}
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">{fullName}</h2>
+                  <p className="text-xs text-slate-500">
+                    {candidate.email ?? "No email provided"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={onClose}
+                className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                {Math.round(candidate.final_score ?? 0)}/100
+              </span>
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium capitalize text-emerald-700">
+                {statusLabel}
+              </span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600">
+                ID: {profileId}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex-1 space-y-6 overflow-y-auto px-5 py-4">
+            <section>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Score Breakdown
+              </h3>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <ScoreBar
+                  label="Skills"
+                  value={candidate.skill_score}
+                  color="bg-slate-500"
+                />
+                <ScoreBar
+                  label="Projects"
+                  value={candidate.project_score}
+                  color="bg-violet-500"
+                />
+                <ScoreBar
+                  label="Education"
+                  value={candidate.education_score}
+                  color="bg-cyan-500"
+                />
+                <ScoreBar
+                  label="Activity"
+                  value={candidate.activity_score}
+                  color="bg-emerald-500"
+                />
+                <ScoreBar
+                  label="Completeness"
+                  value={candidate.completeness_score}
+                  color="bg-amber-500"
+                />
+              </div>
+              {candidate.bonus && candidate.bonus > 0 ? (
+                <p className="mt-2 text-xs font-medium text-amber-700">
+                  Bonus points: +{candidate.bonus}
+                </p>
+              ) : null}
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Skills Match
+              </h3>
+              <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-3">
+                <div>
+                  <p className="mb-1 text-xs font-medium text-slate-600">Matched</p>
+                  <div className="flex flex-wrap gap-1">
+                    {(candidate.matched_skills ?? []).length > 0 ? (
+                      (candidate.matched_skills ?? []).map((skill: string) => (
+                        <Tag key={`matched-${skill}`} name={skill} variant="matched" />
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500">No matched skills</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium text-slate-600">Missing</p>
+                  <div className="flex flex-wrap gap-1">
+                    {(candidate.missing_skills ?? []).length > 0 ? (
+                      (candidate.missing_skills ?? []).map((skill: string) => (
+                        <Tag key={`missing-${skill}`} name={skill} variant="missing" />
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500">No missing skills</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Projects
+              </h3>
+              {(candidate.projects ?? []).length === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                  No projects shared
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {(candidate.projects ?? []).map((project, index: number) => (
+                    <div
+                      key={`${project.id ?? project.title ?? "project"}-${index}`}
+                      className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">
+                        {project.title ?? "Untitled project"}
+                      </p>
+                      {project.desc ? (
+                        <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                          {project.desc}
+                        </p>
+                      ) : null}
+                      {(project.skills ?? []).length > 0 ? (
+                        <p className="mt-1 text-xs text-slate-600">
+                          Skills: {(project.skills ?? []).join(", ")}
+                        </p>
+                      ) : null}
+                      {project.link ? (
+                        <a
+                          href={project.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 inline-block text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                        >
+                          Open project link
+                        </a>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Education
+              </h3>
+              {candidate.education_detail ? (
+                <p className="mb-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                  {candidate.education_detail}
+                </p>
+              ) : null}
+              {(candidate.education ?? []).length === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                  No education records
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {(candidate.education ?? []).map((item, index: number) => (
+                    <div
+                      key={`${item.id ?? item.school ?? item.institution ?? "education"}-${index}`}
+                      className="rounded-xl border border-slate-200 bg-white p-3"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">
+                        {item.degree ?? "Degree not specified"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-600">
+                        {item.school ?? item.institution ?? "Institution not specified"}
+                      </p>
+                      {item.field ? (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          Field: {item.field}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Experience
+              </h3>
+              {(candidate.experience ?? []).length === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                  No experience records
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {(candidate.experience ?? []).map((item, index: number) => (
+                    <div
+                      key={`${item.id ?? item.company ?? item.role ?? "experience"}-${index}`}
+                      className="rounded-xl border border-slate-200 bg-white p-3"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">
+                        {item.role ?? "Role not specified"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-600">
+                        {item.company ?? "Company not specified"}
+                      </p>
+                      {item.description ? (
+                        <p className="mt-1 text-xs text-slate-500">{item.description}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                Application
+              </h3>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                <p>
+                  Application ID: {candidate.application_id ? candidate.application_id : "N/A"}
+                </p>
+                <p className="mt-1">Candidate ID: {profileId}</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -389,6 +663,8 @@ export default function RecruiterDashboard() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState<number>(0);
   const [jobSearch, setJobSearch] = useState<string>("");
+  const [profileCandidate, setProfileCandidate] =
+    useState<RankedCandidate | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -424,6 +700,17 @@ export default function RecruiterDashboard() {
     return () => {
       isActive = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setProfileCandidate(null);
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -784,6 +1071,7 @@ export default function RecruiterDashboard() {
                     key={candidate.candidate_id ?? candidate._id ?? index}
                     candidate={candidate}
                     rank={index}
+                    onViewProfile={() => setProfileCandidate(candidate)}
                   />
                 ))}
               </div>
@@ -791,6 +1079,11 @@ export default function RecruiterDashboard() {
           </div>
         </main>
       </div>
+
+      <CandidateProfileDrawer
+        candidate={profileCandidate}
+        onClose={() => setProfileCandidate(null)}
+      />
     </div>
   );
 }

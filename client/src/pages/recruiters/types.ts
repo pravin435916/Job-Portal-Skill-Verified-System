@@ -7,6 +7,34 @@ export type MatchedProject = {
     matched_skills?: string[];
 };
 
+export type CandidateProject = {
+    id?: string;
+    title?: string;
+    skills?: string[];
+    desc?: string;
+    link?: string;
+};
+
+export type CandidateEducation = {
+    id?: string;
+    school?: string;
+    institution?: string;
+    degree?: string;
+    field?: string;
+    start_date?: string;
+    end_date?: string;
+    year?: string;
+};
+
+export type CandidateExperience = {
+    id?: string;
+    company?: string;
+    role?: string;
+    description?: string;
+    start_date?: string;
+    end_date?: string;
+};
+
 export type Job = {
     job_id?: string;
     id?: string;
@@ -22,9 +50,12 @@ export type Job = {
 export type RankedCandidate = {
     candidate_id?: string;
     _id?: string;
+    application_id?: string | null;
     name?: string;
     email?: string;
+    status?: string;
     bonus?: number;
+    education_detail?: string;
     matched_skills?: string[];
     missing_skills?: string[];
     final_score?: number;
@@ -34,6 +65,9 @@ export type RankedCandidate = {
     activity_score?: number;
     completeness_score?: number;
     matched_in_projects?: MatchedProject[];
+    education?: CandidateEducation[];
+    experience?: CandidateExperience[];
+    projects?: CandidateProject[];
 };
 
 export type NotificationItem = {
@@ -63,6 +97,7 @@ export type TagProps = {
 export type CandidateCardProps = {
     candidate: RankedCandidate;
     rank: number;
+    onViewProfile: () => void;
 };
 
 export type JobCardProps = {
