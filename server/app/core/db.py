@@ -18,7 +18,7 @@ DB_NAME = os.getenv("DB_NAME")
 async def init_db():
     client = AsyncIOMotorClient(MONGO_URL)
 
-    db = client[DB_NAME]   # ✅ stable approach
+    db = client[DB_NAME]   
 
     await init_beanie(
         database=db,

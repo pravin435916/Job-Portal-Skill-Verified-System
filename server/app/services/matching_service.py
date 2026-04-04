@@ -56,7 +56,6 @@ def _job_applicant_ids(job: Job) -> List[str]:
     return cleaned_ids
 
 # ── Skill extraction ───────────────────────────────────────────────────────────
-
 def _extract_job_skill_names(job: Job) -> Set[str]:
     names: Set[str] = set()
     for skill in job.required_skills or []:
@@ -165,7 +164,6 @@ def _serialize_profile_lists(candidate: Candidate, profile_data: Optional[dict])
 
 
 # ── Scoring ────────────────────────────────────────────────────────────────────
-
 def _score_skills(candidate: Candidate, required_skills: Set[str]) -> dict:
     if not required_skills:
         return {"score": 0.0, "matched": [], "missing": []}
