@@ -11,6 +11,12 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
+@router.get("/job/{job_id}", response_model=list[ApplicationResponse])
+async def get_applications_for_job(job_id: str):
+    # use service function to fetch applications for the job
+    applications = await Application.find(Application.job_id == job_id).to_list()
+    return [to_application_response(app) for app in applications]
+
 
 @router.put("/{application_id}/status", response_model=ApplicationResponse)
 async def update_application_status(application_id: str, payload: ApplicationStatusUpdateRequest):

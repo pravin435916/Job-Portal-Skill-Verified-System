@@ -6,6 +6,8 @@ from app.models.application import Application
 
 ALLOWED_STATUSES = {"applied", "shortlisted", "rejected", "interview_scheduled"}
 
+def get_all_applications_for_job(job_id: str) -> list[Application]:
+    return Application.find(Application.job_id == job_id).to_list()
 
 def to_application_response(application: Application) -> dict:
     return {
