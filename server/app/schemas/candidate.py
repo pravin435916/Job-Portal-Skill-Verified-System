@@ -11,6 +11,8 @@ class CandidateUpdate(BaseModel):
     resume: Optional[str] = None
     phone_number: Optional[str] = None
     skills: Optional[List[str]] = None
+    github_link: Optional[str] = None
+    leetcode_link: Optional[str] = None
     projects: Optional[List[Project]]=None
     education: Optional[List[Education]]=None
     experience: Optional[List[Experience]]=None
@@ -60,3 +62,20 @@ class ProjectUpdate(BaseModel):
     link: Optional[str] = None
     skills: Optional[List[str]] = None
     media_link: Optional[List[str]] = None
+
+
+class EducationUpdate(BaseModel):
+    institution: Optional[str] = None
+    degree: Optional[str] = None
+    field_of_study: Optional[str] = None
+    cgpa: Optional[float] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+
+class ExperienceUpdate(BaseModel):
+    company: Optional[str] = None
+    position: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    description: Optional[str] = None

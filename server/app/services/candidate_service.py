@@ -109,6 +109,18 @@ async def delete_education(education_id: str):
     return {"message": "Education deleted"}
 
 
+async def update_education(education_id: str, data):
+    education = await Education.get(education_id)
+
+    if not education:
+        raise HTTPException(status_code=404, detail="Education not found")
+
+    update_data = data.dict(exclude_unset=True, exclude_none=True)
+
+    await education.update({"$set": update_data})
+    return education
+
+
 # ---------------- Experience ----------------
 async def add_experience(candidate_id: str, data):
     candidate = await Candidate.get(candidate_id)
@@ -136,6 +148,18 @@ async def delete_experience(experience_id: str):
 
     await experience.delete()
     return {"message": "Experience deleted"}
+
+
+async def update_experience(experience_id: str, data):
+    experience = await Experience.get(experience_id)
+
+    if not experience:
+        raise HTTPException(status_code=404, detail="Experience not found")
+
+    update_data = data.dict(exclude_unset=True, exclude_none=True)
+
+    await experience.update({"$set": update_data})
+    return experience
 
 
 # ---------------- Full Profile ----------------

@@ -3,6 +3,7 @@ import JobListing from './pages/recruiters/RecruiterDashboard'
 import CandidateJobListing from './pages/candidates/JobListing'
 import JobApply from './pages/candidates/JobApply'
 import LandingPage from './pages/LandingPage'
+import CandidateProfile from './pages/candidates/CandidateProfile'
 
 const Contact = () => <div>Contact Page</div>
 
@@ -15,6 +16,7 @@ const App = () => {
         <Route path="/candidate/jobs" element={<CandidateJobListing />} />
         <Route path="/candidate/jobs/apply" element={<JobApply />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/candidate/profile" element={<CandidateProfile />} />
       </Routes>
     </BrowserRouter>
   )

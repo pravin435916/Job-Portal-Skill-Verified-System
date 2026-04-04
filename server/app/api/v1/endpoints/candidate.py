@@ -1,7 +1,12 @@
 from fastapi import APIRouter
 from app.services import candidate_service
 from app.models.candidate import Candidate
-from app.schemas.candidate import CandidateUpdate,ProjectUpdate
+from app.schemas.candidate import (
+    CandidateUpdate,
+    ProjectUpdate,
+    EducationUpdate,
+    ExperienceUpdate,
+)
 
 router = APIRouter()
 
@@ -59,6 +64,11 @@ async def delete_education(education_id: str):
     return await candidate_service.delete_education(education_id)
 
 
+@router.patch("/education/{education_id}")
+async def update_education(education_id: str, data: EducationUpdate):
+    return await candidate_service.update_education(education_id, data)
+
+
 # ---------------- Experience ----------------
 @router.post("/{candidate_id}/experience")
 async def add_experience(candidate_id: str, data: dict):
@@ -73,6 +83,11 @@ async def get_experience(candidate_id: str):
 @router.delete("/experience/{experience_id}")
 async def delete_experience(experience_id: str):
     return await candidate_service.delete_experience(experience_id)
+
+
+@router.patch("/experience/{experience_id}")
+async def update_experience(experience_id: str, data: ExperienceUpdate):
+    return await candidate_service.update_experience(experience_id, data)
 
 
 # ---------------- Full Profile ----------------
