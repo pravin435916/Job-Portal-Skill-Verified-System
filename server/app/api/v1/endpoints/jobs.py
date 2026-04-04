@@ -6,6 +6,25 @@ from beanie import PydanticObjectId
 router = APIRouter()
 
 
+def _skill_to_name(value) -> str:
+    if isinstance(value, str):
+        return value.strip().lower()
+
+    if isinstance(value, dict):
+        return str(value.get("name", "")).strip().lower()
+
+    return ""
+
+
+def _extract_skill_names(values) -> set[str]:
+    names: set[str] = set()
+    for item in values or []:
+        name = _skill_to_name(item)
+        if name:
+            names.add(name)
+    return names
+
+
 def job_to_dict(job) -> dict:
     return {
         "job_id":              str(job.id),
@@ -44,14 +63,8 @@ async def recommend_jobs(candidate_id: str):
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
 
-    # 2. Get candidate skill names
-    # skills stored as [{"name": "React"}, {"name": "MongoDB"}]
-    candidate_skills = set()
-    for s in (candidate.skills or []):
-        if isinstance(s, dict):
-            candidate_skills.add(s.get("name", "").lower())
-        elif isinstance(s, str):
-            candidate_skills.add(s.lower())
+    # 2. Get candidate skill names (supports both string and object shapes)
+    candidate_skills = _extract_skill_names(candidate.skills)
 
     if not candidate_skills:
         raise HTTPException(
@@ -61,13 +74,10 @@ async def recommend_jobs(candidate_id: str):
 
     # 3. Match jobs
     all_jobs = await Job.find_all().to_list()
-    matched  = []
+    matched = []
 
     for job in all_jobs:
-        job_skill_names = {
-            s.get("name", "").lower()
-            for s in job.required_skills
-        }
+        job_skill_names = _extract_skill_names(job.required_skills)
         common = candidate_skills & job_skill_names
 
         if common:
@@ -78,6 +88,8 @@ async def recommend_jobs(candidate_id: str):
                 "title":            job.title,
                 "description":      job.description,
                 "required_skills":  job.required_skills,
+                "preferred_skills": job.preferred_skills,
+                "experience_required": job.experience_required,
                 "matched_skills":   list(common),
                 "match_score":      score,
                 "reason":           f"You know: {', '.join(common)}"
@@ -113,3 +125,22 @@ async def view_job_description(job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
 
     return job_to_dict(job)
+
+
+# get applicants count from job id 
+@router.get("/{job_id}/applicants-count")
+async def get_applicants_count(job_id: str):
+    try:
+        oid = PydanticObjectId(job_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid job ID")
+
+    job = await Job.get(oid)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    applicants_count = len(job.applicants)
+    return {
+        "job_id": job_id,
+        "applicants_count": applicants_count
+    }

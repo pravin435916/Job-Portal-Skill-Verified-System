@@ -83,6 +83,12 @@ export default function LandingPage() {
 
 					<div className="flex items-center gap-2">
 						<Link
+							to="/candidate/jobs"
+							className="hidden rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-100 sm:inline-flex"
+						>
+							Candidate Jobs
+						</Link>
+						<Link
 							to="/contact"
 							className="hidden rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 sm:inline-flex"
 						>
@@ -122,6 +128,12 @@ export default function LandingPage() {
 									className="rounded-xl border border-indigo-200 bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
 								>
 									Open Recruiter Dashboard
+								</Link>
+								<Link
+									to="/candidate/jobs"
+									className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-100"
+								>
+									Browse Candidate Jobs
 								</Link>
 								<Link
 									to="/contact"
