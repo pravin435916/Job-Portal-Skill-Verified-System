@@ -315,7 +315,9 @@ function CandidateProfileDrawer({
                   {initials}
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">{fullName}</h2>
+                  <h2 className="text-base font-bold text-slate-900">
+                    {fullName}
+                  </h2>
                   <p className="text-xs text-slate-500">
                     {candidate.email ?? "No email provided"}
                   </p>
@@ -340,7 +342,6 @@ function CandidateProfileDrawer({
                 ID: {profileId}
               </span>
             </div>
-
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
@@ -360,7 +361,9 @@ function CandidateProfileDrawer({
                   className="mt-3 inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Take action
-                  <span className={`transition-transform ${actionMenuOpen ? "rotate-180" : ""}`}>
+                  <span
+                    className={`transition-transform ${actionMenuOpen ? "rotate-180" : ""}`}
+                  >
                     ▾
                   </span>
                 </button>
@@ -405,26 +408,42 @@ function CandidateProfileDrawer({
               </h3>
               <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-3">
                 <div>
-                  <p className="mb-1 text-xs font-medium text-slate-600">Matched</p>
+                  <p className="mb-1 text-xs font-medium text-slate-600">
+                    Matched
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {(candidate.matched_skills ?? []).length > 0 ? (
                       (candidate.matched_skills ?? []).map((skill: string) => (
-                        <Tag key={`matched-${skill}`} name={skill} variant="matched" />
+                        <Tag
+                          key={`matched-${skill}`}
+                          name={skill}
+                          variant="matched"
+                        />
                       ))
                     ) : (
-                      <span className="text-xs text-slate-500">No matched skills</span>
+                      <span className="text-xs text-slate-500">
+                        No matched skills
+                      </span>
                     )}
                   </div>
                 </div>
                 <div>
-                  <p className="mb-1 text-xs font-medium text-slate-600">Missing</p>
+                  <p className="mb-1 text-xs font-medium text-slate-600">
+                    Missing
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {(candidate.missing_skills ?? []).length > 0 ? (
                       (candidate.missing_skills ?? []).map((skill: string) => (
-                        <Tag key={`missing-${skill}`} name={skill} variant="missing" />
+                        <Tag
+                          key={`missing-${skill}`}
+                          name={skill}
+                          variant="missing"
+                        />
                       ))
                     ) : (
-                      <span className="text-xs text-slate-500">No missing skills</span>
+                      <span className="text-xs text-slate-500">
+                        No missing skills
+                      </span>
                     )}
                   </div>
                 </div>
@@ -499,7 +518,9 @@ function CandidateProfileDrawer({
                         {item.degree ?? "Degree not specified"}
                       </p>
                       <p className="mt-0.5 text-xs text-slate-600">
-                        {item.school ?? item.institution ?? "Institution not specified"}
+                        {item.school ??
+                          item.institution ??
+                          "Institution not specified"}
                       </p>
                       {item.field ? (
                         <p className="mt-0.5 text-xs text-slate-500">
@@ -534,7 +555,9 @@ function CandidateProfileDrawer({
                         {item.company ?? "Company not specified"}
                       </p>
                       {item.description ? (
-                        <p className="mt-1 text-xs text-slate-500">{item.description}</p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {item.description}
+                        </p>
                       ) : null}
                     </div>
                   ))}
@@ -548,7 +571,8 @@ function CandidateProfileDrawer({
               </h3>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
                 <p>
-                  Application ID: {application?.id ?? candidate.application_id ?? "N/A"}
+                  Application ID:{" "}
+                  {application?.id ?? candidate.application_id ?? "N/A"}
                 </p>
                 <p className="mt-1">Candidate ID: {profileId}</p>
                 <p className="mt-1">Current status: {statusLabel}</p>
@@ -757,8 +781,11 @@ export default function RecruiterDashboard() {
   const [jobSearch, setJobSearch] = useState<string>("");
   const [profileCandidate, setProfileCandidate] =
     useState<RankedCandidate | null>(null);
-  const [jobApplications, setJobApplications] = useState<ApplicationRecord[]>([]);
-  const [applicationsLoading, setApplicationsLoading] = useState<boolean>(false);
+  const [jobApplications, setJobApplications] = useState<ApplicationRecord[]>(
+    [],
+  );
+  const [applicationsLoading, setApplicationsLoading] =
+    useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -929,11 +956,11 @@ export default function RecruiterDashboard() {
       )
     : 0;
   const selectedApplication = profileCandidate
-    ? jobApplications.find(
+    ? (jobApplications.find(
         (application) =>
           application.candidate_id ===
           (profileCandidate.candidate_id ?? profileCandidate._id),
-      ) ?? null
+      ) ?? null)
     : null;
 
   const handleUpdateCandidateStatus = async (
@@ -953,7 +980,9 @@ export default function RecruiterDashboard() {
 
       setJobApplications((currentApplications) =>
         currentApplications.map((application) =>
-          application.id === updatedApplication.id ? updatedApplication : application,
+          application.id === updatedApplication.id
+            ? updatedApplication
+            : application,
         ),
       );
 
@@ -962,7 +991,11 @@ export default function RecruiterDashboard() {
           const candidateId = candidate.candidate_id ?? candidate._id;
 
           return candidateId === updatedApplication.candidate_id
-            ? { ...candidate, status: updatedApplication.status, application_id: updatedApplication.id }
+            ? {
+                ...candidate,
+                status: updatedApplication.status,
+                application_id: updatedApplication.id,
+              }
             : candidate;
         }),
       );
@@ -997,7 +1030,7 @@ export default function RecruiterDashboard() {
         .fade-up { animation: fadeUp 0.35s ease forwards; }
       `}</style>
 
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+      {/* <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
@@ -1028,7 +1061,7 @@ export default function RecruiterDashboard() {
             onOpen={() => setUnread(0)}
           />
         </div>
-      </header>
+      </header> */}
 
       <div
         className="mx-auto flex max-w-7xl gap-6 px-6 py-6"
